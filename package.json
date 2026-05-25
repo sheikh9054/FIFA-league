@@ -1,0 +1,16 @@
+{
+  "name": "fifa-league-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cd backend && npm run dev",
+    "dev:web": "cd frontend && npm run dev",
+    "db:up": "docker compose up -d postgres",
+    "db:seed": "cd backend && npm run db:seed",
+    "setup": "npm run db:up && cd backend && npm install && npx prisma db push && npm run db:seed && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

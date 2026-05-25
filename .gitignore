@@ -1,0 +1,11 @@
+node_modules/
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+.next/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+postgres_data/
+.vercel

@@ -1,0 +1,226 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Local dev without cloud DB: change provider to "sqlite" and use DATABASE_URL="file:./dev.db"
+
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  name          String?
+  avatar        String?
+  role          String    @default("USER")
+  googleId      String?   @unique
+  passwordHash  String?
+  isGuest       Boolean   @default(false)
+  guestExpires  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  comments      Comment[]
+  reactions     Reaction[]
+  announcements Announcement[]
+}
+
+model League {
+  id          String   @id @default(cuid())
+  name        String
+  logo        String?
+  banner      String?
+  season      String   @default("2025/26")
+  description String?
+  isPublic    Boolean  @default(true)
+  inviteCode  String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  players     Player[]
+  matches     Match[]
+  fixtures    Fixture[]
+  tournaments Tournament[]
+  announcements Announcement[]
+}
+
+model Player {
+  id              String   @id @default(cuid())
+  leagueId        String
+  userId          String?
+  name            String
+  nickname        String?
+  avatar          String?
+  country         String?
+  favoriteClub    String?
+  elo             Int      @default(1500)
+  played          Int      @default(0)
+  wins            Int      @default(0)
+  draws           Int      @default(0)
+  losses          Int      @default(0)
+  goalsFor        Int      @default(0)
+  goalsAgainst    Int      @default(0)
+  goalDifference  Int      @default(0)
+  points          Int      @default(0)
+  cleanSheets     Int      @default(0)
+  currentForm     String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  league          League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  homeMatches     Match[]  @relation("HomePlayer")
+  awayMatches     Match[]  @relation("AwayPlayer")
+  wonMatches      Match[]  @relation("Winner")
+  eloHistory      EloHistory[]
+  friendlyHome    FriendlyMatch[] @relation("FriendlyHome")
+  friendlyAway    FriendlyMatch[] @relation("FriendlyAway")
+  tournamentEntries TournamentPlayer[]
+
+  @@index([leagueId])
+  @@index([elo])
+}
+
+model Match {
+  id            String   @id @default(cuid())
+  leagueId      String
+  homePlayerId  String
+  awayPlayerId  String
+  homeScore     Int      @default(0)
+  awayScore     Int      @default(0)
+  winnerId      String?
+  matchType     String   @default("LEAGUE")
+  status        String   @default("COMPLETED")
+  screenshots   String   @default("[]")
+  notes         String?
+  matchday      Int?
+  round         String?
+  tournamentId  String?
+  playedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  league        League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  homePlayer    Player   @relation("HomePlayer", fields: [homePlayerId], references: [id])
+  awayPlayer    Player   @relation("AwayPlayer", fields: [awayPlayerId], references: [id])
+  winner        Player?  @relation("Winner", fields: [winnerId], references: [id])
+  tournament    Tournament? @relation(fields: [tournamentId], references: [id])
+  comments      Comment[]
+  reactions     Reaction[]
+
+  @@index([leagueId])
+  @@index([playedAt])
+}
+
+model FriendlyMatch {
+  id            String   @id @default(cuid())
+  homePlayerId  String
+  awayPlayerId  String
+  homeScore     Int
+  awayScore     Int
+  affectsElo    Boolean  @default(false)
+  notes         String?
+  screenshots   String   @default("[]")
+  playedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  homePlayer    Player   @relation("FriendlyHome", fields: [homePlayerId], references: [id])
+  awayPlayer    Player   @relation("FriendlyAway", fields: [awayPlayerId], references: [id])
+
+  @@index([playedAt])
+}
+
+model Fixture {
+  id            String   @id @default(cuid())
+  leagueId      String
+  homePlayerId  String
+  awayPlayerId  String
+  matchday      Int
+  scheduledAt   DateTime?
+  status        String   @default("SCHEDULED")
+  tournamentId  String?
+  createdAt     DateTime @default(now())
+  league        League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, matchday])
+}
+
+model Tournament {
+  id          String   @id @default(cuid())
+  leagueId    String
+  name        String
+  format      String   @default("LEAGUE")
+  status      String   @default("active")
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  league      League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  matches     Match[]
+  players     TournamentPlayer[]
+}
+
+model TournamentPlayer {
+  id           String     @id @default(cuid())
+  tournamentId String
+  playerId     String
+  groupName    String?
+  eliminated   Boolean    @default(false)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  player       Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, playerId])
+}
+
+model EloHistory {
+  id        String   @id @default(cuid())
+  playerId  String
+  matchId   String?
+  eloBefore Int
+  eloAfter  Int
+  change    Int
+  reason    String?
+  createdAt DateTime @default(now())
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  matchId   String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  matchId   String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, userId, emoji])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  leagueId  String
+  userId    String
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  league    League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  leagueId  String?
+  type      String
+  message   String
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
