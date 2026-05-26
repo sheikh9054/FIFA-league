@@ -7,8 +7,8 @@ services:
     runtime: node
     plan: free
     rootDir: backend
-    buildCommand: npm install && npx prisma generate && npx prisma db push && npm run build
-    startCommand: npm run start
+    buildCommand: npm ci && npm run build
+    startCommand: npm run render:start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -21,3 +21,5 @@ services:
         generateValue: true
       - key: FRONTEND_URL
         sync: false
+      - key: ALLOW_VERCEL_PREVIEWS
+        value: "false"

@@ -1,11 +1,14 @@
 import 'dotenv/config';
 import { createAppAndServer } from './app';
+import { getPort, validateRequiredEnv } from './config/env';
 
-const PORT = parseInt(process.env.PORT || '4000', 10);
+validateRequiredEnv();
+
+const PORT = getPort();
 
 const httpServer = createAppAndServer();
 
 httpServer.listen(PORT, () => {
-  console.log(`🏆 FIFA League API running on http://localhost:${PORT}`);
-  console.log(`📡 Socket.IO ready for realtime updates`);
+  console.log(`FIFA League API listening on port ${PORT}`);
+  console.log('Socket.IO ready for realtime updates');
 });

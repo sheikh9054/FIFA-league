@@ -17,24 +17,18 @@ import { createMatchRoutes } from './routes/matches';
 import { createFriendlyRoutes } from './routes/friendlies';
 import { createAnnouncementRoutes } from './routes/announcements';
 import { initSocket } from './socket';
+import { getAllowedOrigins, isOriginAllowed } from './config/env';
 
 export function createAppAndServer() {
   const app = express();
 
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean);
+  const allowedOrigins = getAllowedOrigins();
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-        if (origin.endsWith('.vercel.app')) return callback(null, true);
-        if (origin.includes('localhost')) return callback(null, true);
-        callback(new Error('Not allowed by CORS'));
+        callback(null, isOriginAllowed(origin, allowedOrigins));
       },
       credentials: true,
     })

@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { authenticate } from '../middleware/auth';
+import { getJwtSecret } from '../config/env';
 
 const router = Router();
 
@@ -19,8 +20,7 @@ const loginSchema = z.object({
 });
 
 function signToken(payload: { userId: string; email?: string; role: string; isGuest?: boolean }) {
-  const secret = process.env.JWT_SECRET || 'dev-secret';
-  return jwt.sign(payload, secret, { expiresIn: '7d' });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '7d' });
 }
 
 router.post('/register', async (req, res, next) => {

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
+import { getJwtSecret } from '../config/env';
 export interface AuthPayload {
   userId: string;
   email?: string;
@@ -24,8 +25,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 
   const token = header.slice(7);
   try {
-    const secret = process.env.JWT_SECRET || 'dev-secret';
-    const payload = jwt.verify(token, secret) as AuthPayload;
+    const payload = jwt.verify(token, getJwtSecret()) as AuthPayload;
     req.user = payload;
     next();
   } catch {
@@ -37,8 +37,7 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (header?.startsWith('Bearer ')) {
     try {
-      const secret = process.env.JWT_SECRET || 'dev-secret';
-      req.user = jwt.verify(header.slice(7), secret) as AuthPayload;
+      req.user = jwt.verify(header.slice(7), getJwtSecret()) as AuthPayload;
     } catch {
       /* ignore */
     }

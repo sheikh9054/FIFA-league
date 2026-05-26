@@ -2,21 +2,15 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import type { AuthPayload } from '../middleware/auth';
+import { getAllowedOrigins, getJwtSecret, isOriginAllowed } from '../config/env';
 
 export function initSocket(httpServer: HttpServer): Server {
-  const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean);
+  const allowedOrigins = getAllowedOrigins();
 
   const io = new Server(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-        if (origin.endsWith('.vercel.app')) return callback(null, true);
-        if (origin.includes('localhost')) return callback(null, true);
-        callback(new Error('Not allowed by CORS'));
+        callback(null, isOriginAllowed(origin, allowedOrigins));
       },
       methods: ['GET', 'POST'],
       credentials: true,
@@ -27,8 +21,7 @@ export function initSocket(httpServer: HttpServer): Server {
     const token = socket.handshake.auth?.token as string | undefined;
     if (token) {
       try {
-        const secret = process.env.JWT_SECRET || 'dev-secret';
-        socket.data.user = jwt.verify(token, secret) as AuthPayload;
+        socket.data.user = jwt.verify(token, getJwtSecret()) as AuthPayload;
       } catch {
         /* guest / public */
       }

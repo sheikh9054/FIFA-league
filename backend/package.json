@@ -2,10 +2,15 @@
   "name": "fifa-league-api",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "20.x",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && tsc && npx prisma db push",
+    "build": "prisma generate && tsc",
     "start": "node dist/index.js",
+    "render:start": "prisma db push && node dist/index.js",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
