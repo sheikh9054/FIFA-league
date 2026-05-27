@@ -7,7 +7,7 @@ export function getSocket(token?: string | null): Socket {
     process.env.NEXT_PUBLIC_SOCKET_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
     process.env.REACT_APP_API_URL ||
-    "http://localhost:4000";
+    "https://fifa-league-1.onrender.com";
 
   if (!socket) {
     socket = io(url, {
